@@ -1,4 +1,4 @@
-# PracticaKubernetes
+# Practica_Kubernetes
 ---
 ## Objetivo de la Práctica:
 
