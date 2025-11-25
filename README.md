@@ -180,7 +180,7 @@ spec:
     nodePort: 32001 # Puerto expuesto externamente en el nodo para el servicio
  externalTrafficPolicy: Cluster
 ````
-Resumen
+Resumen Conceptos:
 
   1. name: Es el nombre del servicio. Como si le pones un nombre a la puerta del servicio, para poder llamarla.
   
