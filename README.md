@@ -168,7 +168,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
- name: serverfilemanager-entrypoint
+ name: serverservice
  namespace: default
 spec:
  type: NodePort
