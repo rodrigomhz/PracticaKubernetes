@@ -141,8 +141,8 @@ spec:
 ## Servicios
 
 En Kubernetes, los Services se utilizan para exponer los puertos de los pods de manera consistente y permitir la comunicación entre ellos. Existen diferentes tipos de servicios, pero en este caso estamos usando NodePort, lo que significa que los servicios estarán accesibles desde fuera del clúster a través de un puerto específico.
-brokerService.
 
+### brokerService.
 ````
 apiVersion: v1
 kind: Service
@@ -163,7 +163,7 @@ spec:
  externalTrafficPolicy: Cluster
 ````
 
-serverFile
+### serverFile
 ````
 apiVersion: v1
 kind: Service
