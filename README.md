@@ -180,3 +180,14 @@ spec:
     nodePort: 32001 # Puerto expuesto externamente en el nodo para el servicio
  externalTrafficPolicy: Cluster
 ````
+Resumen
+
+  1. name: Es el nombre del servicio. Como si le pones un nombre a la puerta del servicio, para poder llamarla.
+  
+  2. app: Es una etiqueta para identificar a qué grupo de casitas (pods) pertenece este servicio. Es como si dijeras: "Estas casitas son del tipo broker".
+  
+  3. port: Es el puerto dentro del clúster que otros servicios usan para acceder a tu servicio. Es la puerta que los servicios dentro de Kubernetes usarán para conectarse.
+  
+  4. targetPort: Es el puerto dentro del contenedor donde el servicio realmente está esperando las conexiones. Es como la puerta dentro de la casita.
+  
+  5. nodePort: Es el puerto en los nodos del clúster que se expone a fuera del clúster. Es como si pusieras una puerta de entrada en la muralla del barrio para que la gente desde fuera pueda entrar.
