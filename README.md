@@ -61,6 +61,7 @@ RUN mkdir FileManagerDir
 COPY resolv.conf /
 CMD cp resolv.conf /etc/resolv.conf && /serverFileManager 172.31.31.163 32002 $(curl -s https://api.ipify.org) 32001
 ````
+La IP debe ser la del Broker.
 
 ### DockerfileB (brokerFileManager):
 ````
