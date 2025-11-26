@@ -545,17 +545,22 @@ ls /data
 ## CONCLUSIÓN
 Esto completa la Configuración Avanzada 1 tal y como exige la práctica
 
-🚀 Parte 3: Configuración Avanzada con NFS
-Esta sección implementa almacenamiento compartido NFS para alcanzar la máxima calificación (10). Permite tener 3 réplicas del servidor compartiendo los mismos archivos.
+## 🚀 Parte 3: Configuración Avanzada con NFS
 
-¿Por qué NFS?
-✅ Alta disponibilidad: 3 réplicas del servidor corriendo simultáneamente
-✅ Persistencia: Los archivos se mantienen aunque un pod se reinicie
-✅ Compartición: Todas las réplicas ven los mismos archivos en tiempo real
-✅ Escalabilidad: Fácil añadir más réplicas sin perder datos
-3.1 Instalar y Configurar Servidor NFS
-En k8smaster0:
+Esta sección implementa **almacenamiento compartido NFS** para alcanzar la máxima calificación (10). Permite tener **3 réplicas** del servidor compartiendo los mismos archivos.
 
+### ¿Por qué NFS?
+
+- ✅ **Alta disponibilidad**: 3 réplicas del servidor corriendo simultáneamente
+- ✅ **Persistencia**: Los archivos se mantienen aunque un pod se reinicie
+- ✅ **Compartición**: Todas las réplicas ven los mismos archivos en tiempo real
+- ✅ **Escalabilidad**: Fácil añadir más réplicas sin perder datos
+
+### 3.1 Instalar y Configurar Servidor NFS
+
+En `k8smaster0`:
+
+```bash
 # Actualizar repositorios
 sudo apt-get update
 
@@ -568,8 +573,11 @@ sudo mkdir -p /mnt/nfs-filemanager
 # Configurar permisos
 sudo chown nobody:nogroup /mnt/nfs-filemanager
 sudo chmod 777 /mnt/nfs-filemanager
-Configurar exportación NFS:
+```
 
+**Configurar exportación NFS:**
+
+```bash
 # Añadir al archivo de exportaciones
 echo "/mnt/nfs-filemanager *(rw,sync,no_subtree_check,no_root_squash)" | sudo tee -a /etc/exports
 
@@ -578,17 +586,26 @@ sudo exportfs -ra
 
 # Verificar que el export está activo
 sudo exportfs -v
-Salida esperada:
+```
 
+**Salida esperada:**
+
+```
 /mnt/nfs-filemanager
         <world>(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,no_root_squash,no_all_squash)
-Verificar servicio:
+```
 
+**Verificar servicio:**
+
+```bash
 sudo systemctl status nfs-kernel-server
-⚠️ Problema Común 1: Ruta sin barra inicial
+```
 
-Si ves el error exportfs: Failed to stat mnt/nfs-filemanager: No such file or directory:
+#### ⚠️ Problema Común 1: Ruta sin barra inicial
 
+Si ves el error `exportfs: Failed to stat mnt/nfs-filemanager: No such file or directory`:
+
+```bash
 # Eliminar línea incorrecta
 sudo sed -i '/^mnt\/nfs-filemanager/d' /etc/exports
 
@@ -597,9 +614,13 @@ echo "/mnt/nfs-filemanager *(rw,sync,no_subtree_check,no_root_squash)" | sudo te
 
 # Aplicar
 sudo exportfs -ra
-3.2 Instalar Cliente NFS en Workers
-En k8sslave2 (usando kubectl debug desde k8smaster0):
+```
 
+### 3.2 Instalar Cliente NFS en Workers
+
+En `k8sslave2` (usando kubectl debug desde `k8smaster0`):
+
+```bash
 # Entrar al nodo con chroot
 kubectl debug node/k8sslave2.psdi.org -it --image=ubuntu -- chroot /host bash
 
@@ -609,31 +630,46 @@ apt-get install -y nfs-common
 
 # Salir
 exit
-Verificar instalación:
+```
 
+**Verificar instalación:**
+
+```bash
 kubectl debug node/k8sslave2.psdi.org -it --image=ubuntu -- chroot /host bash -c "dpkg -l | grep nfs-common"
-Salida esperada:
+```
 
+**Salida esperada:**
+
+```
 ii  nfs-common  1:2.6.1-1ubuntu1.2  amd64  NFS support files common to client and server
-💡 Nota: Los pods de debug temporales pueden eliminarse después:
+```
 
-kubectl delete pod -l app=node-debugger
-3.3 Configurar Security Groups de AWS para NFS
-Antes de crear los recursos de Kubernetes, debes abrir los puertos NFS en AWS:
+> 💡 **Nota**: Los pods de debug temporales pueden eliminarse después:
+> ```bash
+> kubectl delete pod -l app=node-debugger
+> ```
+### 3.3 Configurar Security Groups de AWS para NFS
 
-Ve a AWS Console → EC2 → Security Groups
-Selecciona el security group de k8smaster0
-Editar reglas de entrada y añadir:
-Tipo	Protocolo	Puerto	Origen	Descripción
-TCP personalizado	TCP	2049	172.31.0.0/16	NFS
-TCP personalizado	TCP	111	172.31.0.0/16	RPC (portmapper)
-⚠️ Problema Común 2: Connection timed out al montar NFS
+Antes de crear los recursos de Kubernetes, debes **abrir los puertos NFS en AWS**:
 
-Si los pods muestran mount.nfs: Connection timed out, es porque el Security Group bloquea los puertos NFS. Asegúrate de añadir las reglas anteriores.
+1. Ve a **AWS Console** → **EC2** → **Security Groups**
+2. Selecciona el security group de `k8smaster0`
+3. **Editar reglas de entrada** y añadir:
 
-3.4 Crear PersistentVolume NFS
-Archivo: pv-nfs.yml
+| Tipo | Protocolo | Puerto | Origen | Descripción |
+|------|-----------|--------|--------|-------------|
+| TCP personalizado | TCP | 2049 | 172.31.0.0/16 | NFS |
+| TCP personalizado | TCP | 111 | 172.31.0.0/16 | RPC (portmapper) |
 
+#### ⚠️ Problema Común 2: Connection timed out al montar NFS
+
+Si los pods muestran `mount.nfs: Connection timed out`, es porque el Security Group bloquea los puertos NFS. Asegúrate de añadir las reglas anteriores.
+
+### 3.4 Crear PersistentVolume NFS
+
+**Archivo**: `pv-nfs.yml`
+
+```yaml
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -647,8 +683,11 @@ spec:
     server: 172.31.64.84  # IP privada de k8smaster0
     path: /mnt/nfs-filemanager
   storageClassName: nfs
-Crear el archivo y aplicarlo:
+```
 
+**Crear el archivo y aplicarlo:**
+
+```bash
 cd ~/Practica2/SERVIDOR_NFS
 
 # Crear el archivo pv-nfs.yml con el contenido anterior
@@ -659,13 +698,19 @@ kubectl apply -f pv-nfs.yml
 
 # Verificar
 kubectl get pv
-Salida esperada:
+```
 
+**Salida esperada:**
+
+```
 NAME            CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM
 server-pv-nfs   5Gi        RWX            Retain           Available
-3.5 Crear PersistentVolumeClaim NFS
-Archivo: pvc-nfs.yml
+```
+### 3.5 Crear PersistentVolumeClaim NFS
 
+**Archivo**: `pvc-nfs.yml`
+
+```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -677,8 +722,11 @@ spec:
     requests:
       storage: 5Gi  # Solicita 5Gi
   storageClassName: nfs  # Debe coincidir con el PV
-Aplicar:
+```
 
+**Aplicar:**
+
+```bash
 # Crear el archivo
 nano pvc-nfs.yml
 
@@ -688,46 +736,56 @@ kubectl apply -f pvc-nfs.yml
 # Verificar que se vinculó al PV
 kubectl get pvc
 kubectl get pv
-Salida esperada:
+```
 
+**Salida esperada:**
+
+```
 NAME             STATUS   VOLUME          CAPACITY   ACCESS MODES
 server-pvc-nfs   Bound    server-pv-nfs   5Gi        RWX
-Estado Bound significa que el PVC encontró el PV y está listo para usar.
+```
 
-3.6 Actualizar Deployment del Servidor con NFS
-Ahora modifica el DeploymentServer.yml para usar el volumen NFS y escalar a 3 réplicas:
+Estado `Bound` significa que el PVC encontró el PV y está listo para usar.
 
+### 3.6 Actualizar Deployment del Servidor con NFS
+
+Ahora modifica el `DeploymentServer.yml` para usar el volumen NFS y escalar a **3 réplicas**:
+
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
- name: server-deployment
- namespace: default
+  name: server-deployment
+  namespace: default
 spec:
- replicas: 3  # ← CAMBIO: Escalar de 1 a 3 réplicas
- selector:
-  matchLabels:
-   app: server-deploy
- template:
-  metadata:
-   labels:
-    app: server-deploy
-  spec:
-   nodeSelector:
-    node-role: server
-   containers:
-   - name: server-deployment
-     image: docker.io/d1n0s/kubernetes-practica2server:v2
-     ports:
-     - containerPort: 32001
-     volumeMounts:  # ← NUEVO: Montar el volumen NFS
-     - name: filemanager-storage-nfs
-       mountPath: /FileManagerDir  # Donde la app guarda archivos
-   volumes:  # ← NUEVO: Definir el volumen desde el PVC
-   - name: filemanager-storage-nfs
-     persistentVolumeClaim:
-       claimName: server-pvc-nfs  # Referencia al PVC creado
-Aplicar los cambios:
+  replicas: 3  # ← CAMBIO: Escalar de 1 a 3 réplicas
+  selector:
+    matchLabels:
+      app: server-deploy
+  template:
+    metadata:
+      labels:
+        app: server-deploy
+    spec:
+      nodeSelector:
+        node-role: server
+      containers:
+      - name: server-deployment
+        image: docker.io/d1n0s/kubernetes-practica2server:v2
+        ports:
+        - containerPort: 32001
+        volumeMounts:  # ← NUEVO: Montar el volumen NFS
+        - name: filemanager-storage-nfs
+          mountPath: /FileManagerDir  # Donde la app guarda archivos
+      volumes:  # ← NUEVO: Definir el volumen desde el PVC
+      - name: filemanager-storage-nfs
+        persistentVolumeClaim:
+          claimName: server-pvc-nfs  # Referencia al PVC creado
+```
 
+**Aplicar los cambios:**
+
+```bash
 # Eliminar el deployment anterior
 kubectl delete deployment server-deployment
 
@@ -736,10 +794,13 @@ kubectl apply -f DeploymentServer.yml
 
 # Observar cómo se crean las 3 réplicas
 kubectl get pods -w
-⚠️ Problema Común 3: ImagePullBackOff
+```
 
-Si los pods muestran ImagePullBackOff, verifica la versión de la imagen:
+#### ⚠️ Problema Común 3: ImagePullBackOff
 
+Si los pods muestran `ImagePullBackOff`, verifica la versión de la imagen:
+
+```bash
 # Ver el error
 kubectl describe pod server-deployment-xxx
 
@@ -748,27 +809,37 @@ kubectl get deployment server-deployment -o yaml | grep image
 
 # Debe ser v2 (que existe en Docker Hub)
 # Si está mal, edita DeploymentServer.yml y vuelve a aplicar
-⚠️ Problema Común 4: MountVolume.SetUp failed - Connection timed out
+```
 
-Este es el problema más común al configurar NFS. Los pods quedan en ContainerCreating:
+#### ⚠️ Problema Común 4: MountVolume.SetUp failed - Connection timed out
 
+Este es el problema más común al configurar NFS. Los pods quedan en `ContainerCreating`:
+
+```bash
 # Ver el error
 kubectl describe pod server-deployment-xxx
-Causa: Security Group de AWS bloqueando puertos NFS.
+```
 
-Solución: Añadir reglas en Security Group (ver sección 3.3).
+**Causa**: Security Group de AWS bloqueando puertos NFS.
 
-Salida esperada cuando todo funciona:
+**Solución**: Añadir reglas en Security Group (ver sección 3.3).
 
+**Salida esperada cuando todo funciona:**
+
+```
 NAME                                 READY   STATUS    NODE
 broker-deployment-6fd556654c-jzdsx   1/1     Running   k8sslave1.psdi.org
 server-deployment-6bc5f558c5-7vpf9   1/1     Running   k8sslave2.psdi.org
 server-deployment-6bc5f558c5-cvltl   1/1     Running   k8sslave2.psdi.org
 server-deployment-6bc5f558c5-q9j**   1/1     Running   k8sslave2.psdi.org
-✅ Parte 4: Pruebas y Verificación
+```
+## ✅ Parte 4: Pruebas y Verificación
+
 Esta sección documenta las pruebas realizadas para verificar que el sistema funciona correctamente con NFS.
 
-4.1 Verificar Estado del Cluster
+### 4.1 Verificar Estado del Cluster
+
+```bash
 # Ver todos los pods
 kubectl get pods -o wide
 
@@ -777,14 +848,21 @@ kubectl get svc
 
 # Ver volúmenes
 kubectl get pv,pvc
-4.2 Prueba de Persistencia de Archivos
-Paso 1: Crear un archivo de prueba
+```
 
+### 4.2 Prueba de Persistencia de Archivos
+
+**Paso 1: Crear un archivo de prueba**
+
+```bash
 cd ~/Practica2
 echo "Esto es una prueba" > Prueba.txt
 cat Prueba.txt  # Verificar contenido
-Paso 2: Subir archivo al sistema
+```
 
+**Paso 2: Subir archivo al sistema**
+
+```bash
 # Conectar al broker
 ./clientFileManager 172.31.31.30 32002
 
@@ -793,8 +871,11 @@ upload Prueba.txt
 
 # Verificar que se subió
 lls
-Salida esperada:
+```
 
+**Salida esperada:**
+
+```
 Enter command:
 upload Prueba.txt
 Coping file Prueba.txt in to the FileManager path
@@ -804,31 +885,45 @@ Enter command:
 lls
 Listing files fileManager path
 FileManagerDir/Prueba.txt
-Paso 3: Salir y reconectar (puede conectar a otra réplica)
+```
 
+**Paso 3: Salir y reconectar (puede conectar a otra réplica)**
+
+```bash
 # Salir (Ctrl+C si "exit" no funciona)
 # Volver a conectar
 ./clientFileManager 172.31.31.30 32002
 
 # Listar archivos
 lls
-Resultado esperado: El archivo Prueba.txt debe seguir ahí, confirmando la persistencia.
+```
 
-4.3 Verificar Archivos en el Servidor NFS
-En k8smaster0:
+**Resultado esperado**: El archivo `Prueba.txt` debe seguir ahí, confirmando la persistencia.
 
+### 4.3 Verificar Archivos en el Servidor NFS
+
+En `k8smaster0`:
+
+```bash
 # Ver archivos en el directorio NFS
 ls -la /mnt/nfs-filemanager/
 
 # Ver contenido del archivo
 cat /mnt/nfs-filemanager/Prueba.txt
-Salida esperada:
+```
 
+**Salida esperada:**
+
+```
 total 12
 drwxrwxrwx 2 nobody nogroup 4096 Nov 26 17:45 .
 drwxr-xr-x 3 root   root    4096 Nov 26 17:10 ..
 -rw-r--r-- 1 nobody nogroup   19 Nov 26 17:45 Prueba.txt
-4.4 Verificar Logs de las Réplicas
+```
+
+### 4.4 Verificar Logs de las Réplicas
+
+```bash
 # Obtener nombres de los pods
 kubectl get pods | grep server-deployment
 
@@ -836,4 +931,6 @@ kubectl get pods | grep server-deployment
 kubectl logs server-deployment-6bc5f558c5-7vpf9
 kubectl logs server-deployment-6bc5f558c5-cvltl
 kubectl logs server-deployment-6bc5f558c5-q9j**
+```
+
 Deberías ver que todas las réplicas están registradas en el broker y listas para recibir conexiones.
