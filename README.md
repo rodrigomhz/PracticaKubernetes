@@ -350,23 +350,23 @@ kubectl get nodes --show-labels
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: serverfilemanager-deployment
-  namespace: default
+ name: serverfilemanager-deployment
+ namespace: default
 spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: serverfilemanager
-  template:
-    metadata:
-      labels:
-        app: serverfilemanager
-    spec:
-      nodeSelector:
-        rol: server       # ← obligado a correr en ese nodo
-      containers:
-      - name: serverfilemanager
-        image: bitboss629/serverfilemanager:v1
+ replicas: 3
+ selector:
+  matchLabels:
+   app: serverfilemanager
+ template:
+  metadata:
+   labels:
+    app: serverfilemanager
+  spec:
+   nodeSelector:
+    rol: server
+   containers:
+   - name: serverfilemanager-deployment
+     image: docker.io/bitboss629/serverfilemanager:v1  
         volumeMounts:
         - name: server-storage
           mountPath: /data       # carpeta dentro del contenedor
