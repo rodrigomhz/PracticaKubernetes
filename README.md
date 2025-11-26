@@ -238,8 +238,8 @@ docker push bitboss629/serverfilemanager:v1
 
 Con ambas imágenes ya disponibles en Docker Hub, podemos desplegar los servicios en el clúster usando los archivos YAML correspondientes:
 ````
-kubectl apply -f brokerDeployment.yaml
-kubectl apply -f serverDeployment.yaml
+kubectl apply -f brokerDeployment.yml
+kubectl apply -f serverDeployment.yml
 ````
 
 Esto creará los pods y asignará las imágenes construidas previamente a los Deployments, de forma que cada servicio pueda ejecutarse dentro del clúster Kubernetes
@@ -248,8 +248,8 @@ Esto creará los pods y asignará las imágenes construidas previamente a los De
 
 Ahora que los pods existen, ya puedes exponerlos mediante los servicios:
 ````
-kubectl apply -f brokerService.yaml
-kubectl apply -f serverService.yaml
+kubectl apply -f brokerService.yml
+kubectl apply -f serverService.yml
 ````
 ---
 
@@ -262,3 +262,149 @@ kubectl apply -f serverService.yaml
 ### 📌 Services → exponen los pods
 
   - Una vez los pods existen, puedes "publicarlos" dentro y fuera del clúster.
+
+
+## CONFIGURACIÓN AVANZADA 1
+
+### 🟦 Objetivo
+
+Tener varios pods del serverFileManager ejecutándose en el mismo nodo y compartiendo una misma carpeta para que todos los clientes vean los mismos archivos sin importar qué pod atienda la petición.
+
+¿Por qué funciona hostPath aquí?
+
+Porque hostPath monta una carpeta del nodo físico dentro de cada pod.
+Como los pods están en el mismo nodo, todos montan la misma carpeta:
+
+````
+EC2 nodo esclavo
+│
+├── /mnt/data   ← carpeta física del nodo
+│     ├─ archivo1.txt
+│     ├─ archivo2.png
+│
+├── pod1 → monta /mnt/data en /data
+├── pod2 → monta /mnt/data en /data
+└── pod3 → monta /mnt/data en /data
+````
+
+  ✔ TODOS ven lo mismo
+
+  ✔ TODOS escriben/leen lo mismo
+
+  ✔ NUNCA se borra si un pod cae
+
+  ✔ Cumple exactamente la Configuración Avanzada 1
+
+Esa carpeta /mnt/data hay que crearla en el nodo esclavo, NO en el control-plane
+
+---
+
+### 1. 1. Crear la carpeta compartida en el nodo esclavo
+
+En el nodo donde se ejecutarán los pods del server:
+````
+sudo mkdir -p /mnt/server-data
+sudo chmod 777 /mnt/server-data
+````
+
+Comprobamos los nodos:
+````
+kubectl get nodes
+````
+
+Etiquetamos el nodo esclavo para que acepte los pods del server:
+````
+kubectl label nodes ip-172-31-27-140.ec2.internal servernode=true
+````
+
+Verificamos la etiqueta:
+````
+kubectl get nodes --show-labels
+````
+
+### 2. Deployment del serverFileManager con hostPath + nodeSelector
+````
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: serverfilemanager-deployment
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: serverfilemanager
+  template:
+    metadata:
+      labels:
+        app: serverfilemanager
+    spec:
+      nodeSelector:
+        servernode: "true"       # ← obligado a correr en ese nodo
+      containers:
+      - name: serverfilemanager
+        image: bitboss629/serverfilemanager:v1
+        volumeMounts:
+        - name: server-storage
+          mountPath: /data       # carpeta dentro del contenedor
+      volumes:
+      - name: server-storage
+        hostPath:
+          path: /mnt/server-data # carpeta del nodo físico
+          type: DirectoryOrCreate
+````
+Resumen Conceptos:
+
+  - hostPath.path → carpeta REAL del nodo
+
+  - mountPath → carpeta dentro del contenedor
+
+  - replicas: 3 → 3 pods usando la MISMA carpeta
+
+  - nodeSelector → obliga a que los pods estén en el nodo marcado
+
+---
+
+### 3. Hacer imagen de docker
+````
+docker build -t bitboss629/serverfilemanager:v1 .
+docker push bitboss629/serverfilemanager:v1
+````
+
+3. Aplicar el deployment
+````
+kubectl apply -f serverDeployment.yml
+````
+Si ya existían pods del server, reiniciamos:
+````
+kubectl rollout restart deployment serverfilemanager-deployment
+````
+O si preferimos podemos borrarlos:
+````
+kubectl delete pod -l app=serverfilemanager
+````
+
+4. Comprobar que funciona
+````
+kubectl get pods -o wide
+````
+Los 3 pods deben estar en el MISMO nodo.
+
+Entrar en un pod:
+````
+kubectl exec -it <nombre-pod> -- bash
+ls /data
+````
+
+Entrar en  otro pod:
+````
+kubectl exec -it <otro-pod> -- bash
+ls /data
+````
+
+✔ Deben aparecer los mismos archivos
+✔ Lo que suba un cliente al pod1 aparece en pod2 y pod3
+✔ Todo se guarda en /mnt/server-data del nodo esclavo
+
+## CONCLUSIÓN
+Esto completa la Configuración Avanzada 1 tal y como exige la práctica
