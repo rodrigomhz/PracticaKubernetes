@@ -162,7 +162,7 @@ COPY brokerFileManager /brokerFileManager
 RUN chmod +x /brokerFileManager
 
 # Ejecutar el broker al iniciar el contenedor
-CMD ["/brokerFileManager"]
+CMD brokerFileManager
 ```
 
 #### 🔗 Comunicación Broker-Server
