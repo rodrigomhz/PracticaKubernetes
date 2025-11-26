@@ -159,7 +159,7 @@ Antes de esto debemos de asignar a nuestros pods unos roles para relacionarlos c
   kubectl label node k8smaster0.psdi.org rol=broker
   kubectl label node k8sslave1.psdi.org rol=server
 ````
-![nodo](https://github.com/rodrigomhz/PracticaKubernetes/blob/main/Images/nodos.png)
+![nodo](https://github.com/rodrigomhz/PracticaKubernetes/blob/main/Images/nodes.png)
 
 ## Servicios
 
