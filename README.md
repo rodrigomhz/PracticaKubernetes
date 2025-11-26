@@ -111,9 +111,11 @@ spec:
    labels:
     app: brokerfilemanager
   spec:
+   nodeSelector:
+    rol: broker
    containers:
    - name: brokerfilemanager-deployment
-     image: docker.io/bitboss629/brokerfilemanager:v1  
+     image: docker.io/bitboss629/brokerfilemanager:v1 
 ````
 
 ### serverDeployment:
@@ -133,9 +135,11 @@ spec:
    labels:
     app: serverfilemanager
   spec:
+   nodeSelector:
+    rol: server
    containers:
-   - name: serverFilemanager-Deployment
-     image: docker.io/bitboss629/serverfilemanager:v1    
+   - name: serverfilemanager-deployment
+     image: docker.io/bitboss629/serverfilemanager:v1 
 ````
 ---
 ````
@@ -149,7 +153,14 @@ ESO significa:
   - Si no existe → FALLA
 
   - Si existe → Kubernetes la descarga y levanta los pods
-  - 
+
+Antes de esto debemos de asignar a nuestros pods unos roles para relacionarlos con los deployments:
+````
+  kubectl label node k8smaster0.psdi.org rol=broker
+  kubectl label node k8sslave1.psdi.org rol=server
+````
+![nodo](https://github.com/rodrigomhz/PracticaKubernetes/blob/main/Images/nodos.png)
+
 ## Servicios
 
 En Kubernetes, los Services se utilizan para exponer los puertos de los pods de manera consistente y permitir la comunicación entre ellos. Existen diferentes tipos de servicios, pero en este caso estamos usando NodePort, lo que significa que los servicios estarán accesibles desde fuera del clúster a través de un puerto específico.
@@ -248,6 +259,8 @@ Podemos comprobar que todo ha ido bien con el comando:
 ````
 docker images
 ````
+
+![nodo](https://github.com/rodrigomhz/PracticaKubernetes/blob/main/Images/dockerImages.png)
 
 ## 3. Aplicación de los Deployments en Kubernetes
 
