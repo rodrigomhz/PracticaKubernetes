@@ -244,6 +244,11 @@ Subimos también esta imagen a Docker Hub:
 docker push bitboss629/serverfilemanager:v1
 ````
 
+Podemos comprobar que todo ha ido bien con el comando:
+````
+docker images
+````
+
 ## 3. Aplicación de los Deployments en Kubernetes
 
 Con ambas imágenes ya disponibles en Docker Hub, podemos desplegar los servicios en el clúster usando los archivos YAML correspondientes:
