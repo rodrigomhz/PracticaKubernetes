@@ -327,7 +327,7 @@ Esa carpeta /mnt/data hay que crearla en el nodo esclavo, NO en el control-plane
 
 ---
 
-### 1. 1. Crear la carpeta compartida en el nodo esclavo
+### 1. Crear la carpeta compartida en el nodo esclavo
 
 En el nodo donde se ejecutarán los pods del server:
 ````
@@ -394,20 +394,12 @@ docker build -t bitboss629/serverfilemanager:v1 .
 docker push bitboss629/serverfilemanager:v1
 ````
 
-3. Aplicar el deployment
+1. Aplicar el deployment
 ````
 kubectl apply -f serverDeployment.yml
 ````
-Si ya existían pods del server, reiniciamos:
-````
-kubectl rollout restart deployment serverfilemanager-deployment
-````
-O si preferimos podemos borrarlos:
-````
-kubectl delete pod -l app=serverfilemanager
-````
 
-4. Comprobar que funciona
+2. Comprobar que funciona
 ````
 kubectl get pods -o wide
 ````
