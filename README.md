@@ -251,3 +251,14 @@ Ahora que los pods existen, ya puedes exponerlos mediante los servicios:
 kubectl apply -f brokerService.yaml
 kubectl apply -f serverService.yaml
 ````
+---
+
+## ¿Por qué en este orden?
+
+### 📌 Deployments → crean los pods
+
+  - Sin pods, los services no tienen a quién conectar.
+
+### 📌 Services → exponen los pods
+
+  - Una vez los pods existen, puedes "publicarlos" dentro y fuera del clúster.
