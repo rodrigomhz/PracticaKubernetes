@@ -209,6 +209,16 @@ Resumen Conceptos:
 Antes de desplegar nuestros servicios en Kubernetes, es necesario construir las imágenes Docker de ambos componentes: brokerFileManager y serverFileManager.
 Estas imágenes son las que luego utilizarán los Deployments.
 
+Antes de comenzar debemos loguearnos:
+````
+docker login
+````
+Te pedirá:
+
+  - Username → tu usuario de Docker Hub
+
+  - Password → tu contraseña de Docker Hub
+
 ## 1. Construcción y subida de la imagen del Broker
 
 Primero, desde la carpeta que contiene el Dockerfile del broker, construimos su imagen:
