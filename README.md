@@ -340,11 +340,6 @@ Comprobamos los nodos:
 kubectl get nodes
 ````
 
-Etiquetamos el nodo esclavo para que acepte los pods del server:
-````
-kubectl label nodes ip-172-31-27-140.ec2.internal servernode=true
-````
-
 Verificamos la etiqueta:
 ````
 kubectl get nodes --show-labels
