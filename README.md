@@ -329,6 +329,11 @@ Esa carpeta /mnt/data hay que crearla en el nodo esclavo, NO en el control-plane
 
 ### 1. Crear la carpeta compartida en el nodo esclavo
 
+Nos conectamos a la máquina de server:
+````
+ssh ubuntu@IP_PRIVADA_DEL_WORKER
+````
+
 En el nodo donde se ejecutarán los pods del server:
 ````
 sudo mkdir -p /mnt/server-data
