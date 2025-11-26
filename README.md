@@ -374,11 +374,11 @@ spec:
         image: docker.io/bitboss629/serverfilemanager:v1
         volumeMounts:
         - name: server-storage
-          mountPath: /data
+          mountPath: /FileManagerDir
       volumes:
       - name: server-storage
         hostPath:
-          path: /mnt/server-data
+          path: /home/ubuntu/compartido
           type: DirectoryOrCreate
 ````
 Resumen Conceptos:
