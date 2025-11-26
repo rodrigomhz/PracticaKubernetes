@@ -113,7 +113,7 @@ spec:
   spec:
    containers:
    - name: brokerfilemanager-deployment
-     image: docker.io/bitboss629/brokerfilemanager:latest   
+     image: docker.io/bitboss629/brokerfilemanager:v1  
 ````
 
 ### serverDeployment:
@@ -135,9 +135,21 @@ spec:
   spec:
    containers:
    - name: serverFilemanager-Deployment
-     image: docker.io/bitboss629/serverfilemanager:latest    
+     image: docker.io/bitboss629/serverfilemanager:v1    
+````
+---
+````
+image: docker.io/bitboss629/brokerfilemanager:v1
 ````
 
+ESO significa:
+
+  - “Kubernetes buscará la imagen bitboss629/brokerfilemanager:v1 en Docker Hub”
+
+  - Si no existe → FALLA
+
+  - Si existe → Kubernetes la descarga y levanta los pods
+  - 
 ## Servicios
 
 En Kubernetes, los Services se utilizan para exponer los puertos de los pods de manera consistente y permitir la comunicación entre ellos. Existen diferentes tipos de servicios, pero en este caso estamos usando NodePort, lo que significa que los servicios estarán accesibles desde fuera del clúster a través de un puerto específico.
