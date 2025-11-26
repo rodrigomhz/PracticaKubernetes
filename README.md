@@ -175,7 +175,7 @@ spec:
  externalTrafficPolicy: Cluster
 ````
 
-### serverFile
+### serverService
 ````
 apiVersion: v1
 kind: Service
@@ -203,3 +203,51 @@ Resumen Conceptos:
   4. targetPort: Es el puerto dentro del contenedor donde el servicio realmente está esperando las conexiones. Es como la puerta dentro de la casita.
   
   5. nodePort: Es el puerto en los nodos del clúster que se expone a fuera del clúster. Es como si pusieras una puerta de entrada en la muralla del barrio para que la gente desde fuera pueda entrar.
+
+# Ejecucuión
+---
+Antes de desplegar nuestros servicios en Kubernetes, es necesario construir las imágenes Docker de ambos componentes: brokerFileManager y serverFileManager.
+Estas imágenes son las que luego utilizarán los Deployments.
+
+## 1. Construcción y subida de la imagen del Broker
+
+Primero, desde la carpeta que contiene el Dockerfile del broker, construimos su imagen:
+
+````
+docker build -t bitboss629/brokerfilemanager:v1 .
+````
+
+Una vez generada, la subimos a Docker Hub para que Kubernetes pueda descargarla:
+````
+docker push bitboss629/brokerfilemanager:v1
+````
+
+## 2. Construcción y subida de la imagen del Server
+
+A continuación, repetimos el proceso para el servidor, situándonos en la carpeta donde está su Dockerfile:
+````
+docker build -t bitboss629/serverfilemanager:v1 .
+````
+
+Subimos también esta imagen a Docker Hub:
+````
+docker push bitboss629/serverfilemanager:v1
+````
+
+## 3. Aplicación de los Deployments en Kubernetes
+
+Con ambas imágenes ya disponibles en Docker Hub, podemos desplegar los servicios en el clúster usando los archivos YAML correspondientes:
+````
+kubectl apply -f brokerDeployment.yaml
+kubectl apply -f serverDeployment.yaml
+````
+
+Esto creará los pods y asignará las imágenes construidas previamente a los Deployments, de forma que cada servicio pueda ejecutarse dentro del clúster Kubernetes
+
+## 4. Aplicacion de los Service en Kubernetes
+
+Ahora que los pods existen, ya puedes exponerlos mediante los servicios:
+````
+kubectl apply -f brokerService.yaml
+kubectl apply -f serverService.yaml
+````
