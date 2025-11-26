@@ -1,20 +1,66 @@
-# Practica_Kubernetes
+# 🚀 Práctica Kubernetes - Gestión de Archivos Distribuida
+
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.28-blue?logo=kubernetes)](https://kubernetes.io/)
+[![Docker](https://img.shields.io/badge/Docker-20.10-blue?logo=docker)](https://www.docker.com/)
+[![AWS EC2](https://img.shields.io/badge/AWS-EC2-orange?logo=amazon-aws)](https://aws.amazon.com/ec2/)
+
 ---
-## Objetivo de la Práctica:
 
-El objetivo de esta práctica es desplegar una aplicación distribuida utilizando Kubernetes y Docker en un clúster de instancias EC2:
+## 📋 Tabla de Contenidos
 
-En Kubernetes, un clúster está formado por:
+- [Objetivo de la Práctica](#objetivo-de-la-práctica)
+- [Arquitectura del Sistema](#arquitectura-del-sistema)
+- [Preparación del Entorno](#1-preparación-del-entorno)
+- [Imágenes Docker](#2-imágenes-docker)
+- [Deployments](#deployments)
+- [Servicios](#servicios)
+- [Ejecución](#ejecución)
+- [Configuración Avanzada 1: HostPath](#configuración-avanzada-1)
+- [Configuración Avanzada 2: NFS](#🚀-parte-3-configuración-avanzada-con-nfs)
+- [Pruebas y Verificación](#✅-parte-4-pruebas-y-verificación)
 
-  - Master node (Control-Plane): Es la máquina que se encarga de coordinar todo el trabajo. Supervisa las tareas, decide dónde poner los servicios y coordina los demás nodos.
+---
 
-  - Worker nodes (Nodos esclavos): Son las máquinas donde realmente ejecutan las aplicaciones (en nuestro caso, los servicios como brokerFileManager y serverFileManager). En estos nodos se crean los pods que ejecutan tus servicios, vamos a desglosarlos un poco más.:
+## 🎯 Objetivo de la Práctica
 
-    - **brokerFileManager**: El broker que gestiona la comunicación entre el servidor y el cliente.
+Esta práctica tiene como objetivo desplegar una **aplicación distribuida de gestión de archivos** utilizando [Kubernetes](https://kubernetes.io/) y [Docker](https://www.docker.com/) en un clúster de instancias [AWS EC2](https://aws.amazon.com/ec2/).
 
-    - **serverFileManager**: El servidor que proporciona acceso a los archivos.
+### 🏗️ Arquitectura del Sistema
 
-A continuación, desglosaré lo que hemos hecho hasta ahora, explicando cada paso y su propósito:
+Un clúster de Kubernetes está compuesto por:
+
+#### **Control Plane (Nodo Maestro)**
+- 🎛️ **Función**: Coordina y supervisa todo el clúster
+- 📊 **Responsabilidades**:
+  - Planificación de pods
+  - Gestión del estado del clúster
+  - Coordinación de nodos worker
+  - API Server para comunicación
+
+#### **Worker Nodes (Nodos Trabajadores)**
+- ⚙️ **Función**: Ejecutan las aplicaciones containerizadas
+- 📦 **Componentes desplegados**:
+  - **brokerFileManager**: Gestiona la comunicación entre clientes y servidores
+  - **serverFileManager**: Proporciona acceso y almacenamiento de archivos
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Control Plane                        │
+│              (k8smaster0.psdi.org)                      │
+│                                                         │
+│  • API Server  • Scheduler  • Controller Manager       │
+└────────────────────┬────────────────────────────────────┘
+                     │
+        ┌────────────┴────────────┐
+        │                         │
+┌───────▼────────┐      ┌────────▼────────┐
+│  Worker Node 1 │      │  Worker Node 2  │
+│   (Broker)     │      │   (Server)      │
+│                │      │                 │
+│  Pod: Broker   │◄────►│  Pod: Server    │
+│  Port: 32002   │      │  Port: 32001    │
+└────────────────┘      └─────────────────┘
+```
 
 ---
 

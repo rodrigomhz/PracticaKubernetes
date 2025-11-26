@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: server-deployment
+ namespace: default
+spec:
+ replicas: 3  # ← CAMBIO: Escalar de 1 a 3 réplicas
+ selector:
+  matchLabels:
+   app: server-deploy
+ template:
+  metadata:
+   labels:
+    app: server-deploy
+  spec:
+   nodeSelector:
+    rol: server
+   containers:
+   - name: server-deployment
+     image: docker.io/d1n0s/kubernetes-practica2server:v2
+     ports:
+     - containerPort: 32001
+     volumeMounts:  # ← NUEVO: Montar el volumen NFS
+     - name: filemanager-storage-nfs
+       mountPath: /FileManagerDir  # Donde la app guarda archivos
+   volumes:  # ← NUEVO: Definir el volumen desde el PVC
+   - name: filemanager-storage-nfs
+     persistentVolumeClaim:
+       claimName: server-pvc-nfs  # Referencia al PVC creado

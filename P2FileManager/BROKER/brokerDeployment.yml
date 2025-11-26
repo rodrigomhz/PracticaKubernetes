@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: brokerfilemanager-deployment
+ namespace: default
+spec:
+ replicas: 1
+ selector:
+  matchLabels:
+   app: brokerfilemanager
+ template:
+  metadata:
+   labels:
+    app: brokerfilemanager
+  spec:
+   nodeSelector:
+    rol: broker
+   containers:
+   - name: brokerfilemanager-deployment
+     image: docker.io/bitboss629/brokerfilemanager:v1  
+
