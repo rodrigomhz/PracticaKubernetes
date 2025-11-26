@@ -125,19 +125,19 @@ COPY resolv.conf /
 # Comando de inicio del servidor
 # Argumentos: <IP_BROKER> <PUERTO_BROKER> <IP_PUBLICA> <PUERTO_SERVER>
 CMD cp resolv.conf /etc/resolv.conf && \
-    /serverFileManager 172.31.31.163 32002 $(curl -s https://api.ipify.org) 32001
+    /serverFileManager 172.31.30.47 32002 $(curl -s https://api.ipify.org) 32001
 ```
 
 #### 🔑 Parámetros del Servidor
 
 | Parámetro | Valor | Descripción |
 |-----------|-------|-------------|
-| `IP_BROKER` | `172.31.31.163` | ⚠️ **IP privada del Broker** (modificar según tu despliegue) |
+| `IP_BROKER` | `172.31.30.47` | ⚠️ **IP privada del Broker** |
 | `PUERTO_BROKER` | `32002` | Puerto donde escucha el Broker |
 | `IP_PUBLICA` | `$(curl -s https://api.ipify.org)` | Obtiene la IP pública automáticamente |
 | `PUERTO_SERVER` | `32001` | Puerto donde escucha el Servidor |
 
-> ⚠️ **Importante**: Reemplaza `172.31.31.163` con la IP privada real de tu instancia Broker.
+> 💡 **Nota**: La IP del Broker (`172.31.30.47`) ya está configurada correctamente para este despliegue.
 
 ### 📄 Dockerfile del Broker (`brokerFileManager`)
 
@@ -680,7 +680,7 @@ spec:
   accessModes:
     - ReadWriteMany  # Permite que múltiples pods lo usen simultáneamente
   nfs:
-    server: 172.31.64.84  # IP privada de k8smaster0
+    server: 172.31.17.121  # IP privada de k8smaster0 (Control-Plane)
     path: /mnt/nfs-filemanager
   storageClassName: nfs
 ```
@@ -864,7 +864,7 @@ cat Prueba.txt  # Verificar contenido
 
 ```bash
 # Conectar al broker
-./clientFileManager 172.31.31.30 32002
+./clientFileManager 172.31.30.47 32002
 
 # Dentro del cliente, subir el archivo
 upload Prueba.txt
@@ -892,7 +892,7 @@ FileManagerDir/Prueba.txt
 ```bash
 # Salir (Ctrl+C si "exit" no funciona)
 # Volver a conectar
-./clientFileManager 172.31.31.30 32002
+./clientFileManager 172.31.30.47 32002
 
 # Listar archivos
 lls
