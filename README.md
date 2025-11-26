@@ -363,7 +363,7 @@ spec:
         app: serverfilemanager
     spec:
       nodeSelector:
-        servernode: "true"       # ← obligado a correr en ese nodo
+        rol: server       # ← obligado a correr en ese nodo
       containers:
       - name: serverfilemanager
         image: bitboss629/serverfilemanager:v1
