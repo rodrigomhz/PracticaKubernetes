@@ -235,7 +235,7 @@ spec:
 ---
 
 ### serverDeployment:
-````
+````yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -282,7 +282,7 @@ Antes de esto debemos de asignar a nuestros pods unos roles para relacionarlos c
 En Kubernetes, los Services se utilizan para exponer los puertos de los pods de manera consistente y permitir la comunicación entre ellos. Existen diferentes tipos de servicios, pero en este caso estamos usando NodePort, lo que significa que los servicios estarán accesibles desde fuera del clúster a través de un puerto específico.
 
 ### brokerService.
-````
+````yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -303,7 +303,7 @@ spec:
 ````
 
 ### serverService
-````
+````yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -467,7 +467,7 @@ kubectl get nodes --show-labels
 ````
 
 ### 2. Deployment del serverFileManager con hostPath + nodeSelector
-````
+````yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
