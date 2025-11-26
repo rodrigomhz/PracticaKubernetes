@@ -331,7 +331,7 @@ Esa carpeta /mnt/data hay que crearla en el nodo esclavo, NO en el control-plane
 
 Nos conectamos a la máquina de server:
 ````
-ssh ubuntu@IP_PRIVADA_DEL_WORKER
+ssh -i labsuser.pem k8sslave2.psdi.org
 ````
 
 En el nodo donde se ejecutarán los pods del server:
