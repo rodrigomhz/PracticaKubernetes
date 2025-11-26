@@ -64,105 +64,175 @@ Un clúster de Kubernetes está compuesto por:
 
 ---
 
-## 1. Preparación del Entorno:
+## 1. 🛠️ Preparación del Entorno
 
-### Despliegue en EC2:
+### 🌐 Despliegue en AWS EC2
 
-. Tienes 3 instancias EC2:
+La infraestructura consta de **3 instancias EC2**:
 
-  - Broker: Esta instancia ejecuta el servicio del brokerFileManager.
+| Instancia | Rol | Función | Hostname |
+|-----------|-----|---------|----------|
+| 🎛️ **Control-Plane** | Master | Gestiona el clúster de Kubernetes | `k8smaster0.psdi.org` |
+| 🔗 **Broker** | Worker | Ejecuta el servicio `brokerFileManager` | `k8sslave1.psdi.org` |
+| 📁 **Server** | Worker | Ejecuta el servicio `serverFileManager` | `k8sslave2.psdi.org` |
 
-  - Control-Plane: Es la máquina que gestiona el control de Kubernetes.
+### 🐳 Rol de Kubernetes
 
-  - Server: Esta instancia ejecuta el servicio del serverFileManager.
+[Kubernetes](https://kubernetes.io/docs/concepts/) gestiona los contenedores Docker que ejecutan:
+- `brokerFileManager`: Orquesta las conexiones
+- `serverFileManager`: Almacena y sirve archivos
 
-Estas instancias están en ejecución, y cada una tiene una función clave dentro de la infraestructura.
+> 💡 **Nota**: Asegúrate de que todas las instancias tengan los [Security Groups](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html) correctamente configurados para permitir comunicación entre puertos 32001 y 32002.
 
-. Kubernetes:
+## 2. 🐳 Imágenes Docker
 
-  - Kubernetes se usará para gestionar los contenedores Docker que ejecutarán los servicios de brokerFileManager y serverFileManager.
+### 📝 ¿Qué es un Dockerfile?
 
-## 2. Imágenes Docker:
+Un [Dockerfile](https://docs.docker.com/engine/reference/builder/) es un archivo de texto que contiene todas las instrucciones necesarias para construir una imagen Docker. Define:
+- El sistema operativo base
+- Las dependencias a instalar
+- Los archivos a copiar
+- Los comandos a ejecutar al iniciar el contenedor
 
-### Dockerfile (serverFileManager):
+### 📄 Dockerfile del Server (`serverFileManager`)
 
-Para crear los contenedores que ejecutarán los servicios, necesitamos un Dockerfile para cada servicio. Este archivo contiene las instrucciones sobre cómo crear la imagen Docker para un servicio en particular. A continuación, explicamos cómo funciona el Dockerfile que hemos configurado para cada uno:
+**Archivo**: `DockerfileS`
 
-DockerFileS (serverFileManager):
-````
-# Usar una imagen base oficial de Ubuntu
+```dockerfile
+# Imagen base oficial de Ubuntu 20.04
 FROM ubuntu:20.04
 
-# Actualizar los repositorios e instalar dependencias
-RUN apt-get update
-RUN apt-get install -y software-properties-common 
-RUN apt-get install -y curl
+# Actualizar repositorios e instalar dependencias necesarias
+RUN apt-get update && \
+    apt-get install -y software-properties-common curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Exponer el puerto 32001
+# Exponer el puerto 32001 para conexiones externas
 EXPOSE 32001
 
+# Copiar el ejecutable del servidor
 COPY serverFileManager /
-RUN chmod +x /serverFileManager
-RUN mkdir FileManagerDir
-COPY resolv.conf /
-CMD cp resolv.conf /etc/resolv.conf && /serverFileManager 172.31.31.163 32002 $(curl -s https://api.ipify.org) 32001
-````
-La IP debe ser la del Broker.
 
-### DockerfileB (brokerFileManager):
-````
-# Usar una imagen base oficial de Ubuntu
+# Dar permisos de ejecución
+RUN chmod +x /serverFileManager
+
+# Crear directorio para almacenar archivos
+RUN mkdir FileManagerDir
+
+# Copiar configuración DNS
+COPY resolv.conf /
+
+# Comando de inicio del servidor
+# Argumentos: <IP_BROKER> <PUERTO_BROKER> <IP_PUBLICA> <PUERTO_SERVER>
+CMD cp resolv.conf /etc/resolv.conf && \
+    /serverFileManager 172.31.31.163 32002 $(curl -s https://api.ipify.org) 32001
+```
+
+#### 🔑 Parámetros del Servidor
+
+| Parámetro | Valor | Descripción |
+|-----------|-------|-------------|
+| `IP_BROKER` | `172.31.31.163` | ⚠️ **IP privada del Broker** (modificar según tu despliegue) |
+| `PUERTO_BROKER` | `32002` | Puerto donde escucha el Broker |
+| `IP_PUBLICA` | `$(curl -s https://api.ipify.org)` | Obtiene la IP pública automáticamente |
+| `PUERTO_SERVER` | `32001` | Puerto donde escucha el Servidor |
+
+> ⚠️ **Importante**: Reemplaza `172.31.31.163` con la IP privada real de tu instancia Broker.
+
+### 📄 Dockerfile del Broker (`brokerFileManager`)
+
+**Archivo**: `DockerfileB`
+
+```dockerfile
+# Imagen base oficial de Ubuntu 20.04
 FROM ubuntu:20.04
 
-# Actualizar los repositorios e instalar dependencias
-RUN apt-get update
-RUN apt-get install -y software-properties-common 
-RUN apt-get install -y curl
+# Actualizar repositorios e instalar dependencias
+RUN apt-get update && \
+    apt-get install -y software-properties-common curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Exponer el puerto 32002
+# Exponer el puerto 32002 para el servicio Broker
 EXPOSE 32002
 
-# Queremos haccer el dockerFile del Broker
-
-# Copiar el ejecutable al contenedor
+# Copiar el ejecutable del broker al contenedor
 COPY brokerFileManager /brokerFileManager
 
-# Dar permisos de ejecuacion
+# Dar permisos de ejecución
 RUN chmod +x /brokerFileManager
 
-# Ejecutar brokerFileManager cuando inicie el contenedor
-CMD /brokerFileManager
-````
+# Ejecutar el broker al iniciar el contenedor
+CMD ["/brokerFileManager"]
+```
 
-serverFileManager necesita conectarse al brokerFileManager para obtener información sobre cómo conectarse a otros servidores. Esto se hace utilizando el puerto 32002, que es el puerto en el que el broker está esperando las conexiones.
+#### 🔗 Comunicación Broker-Server
 
-## Deployments
+El `serverFileManager` necesita conectarse al `brokerFileManager` para:
+- 📝 Registrarse como servidor disponible
+- 🔄 Recibir información de otros servidores
+- 📡 Mantener la comunicación activa
 
-En Kubernetes, Deployment es un objeto que gestiona la creación y actualización de pods de manera automática. Un Deployment asegura que siempre haya el número adecuado de pods ejecutándose, incluso en el caso de fallos o actualizaciones. En este caso, tenemos dos Deployments: uno para brokerFileManager y otro para serverFileManager.
+Esta comunicación se realiza a través del **puerto 32002**, donde el Broker escucha las conexiones entrantes.
 
-### brokerDeployment:
-````
+```
+┌──────────┐                ┌──────────┐
+│  Server  │──── 32002 ────►│  Broker  │
+│  :32001  │◄─── register ──│  :32002  │
+└──────────┘                └──────────┘
+```
+
+---
+
+## 📦 Deployments de Kubernetes
+
+### ¿Qué es un Deployment?
+
+Un [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) en Kubernetes es un recurso que:
+- ✅ Gestiona la creación y actualización de pods automáticamente
+- 🔄 Mantiene el número deseado de réplicas ejecutándose
+- 🛡️ Proporciona alta disponibilidad y self-healing
+- 📈 Permite escalado horizontal fácil
+
+### 🔗 Deployment del Broker
+
+**Archivo**: `brokerDeployment.yml`
+
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
- name: brokerfilemanager-deployment
- namespace: default
+  name: brokerfilemanager-deployment
+  namespace: default
 spec:
- replicas: 1
- selector:
-  matchLabels:
-   app: brokerfilemanager
- template:
-  metadata:
-   labels:
-    app: brokerfilemanager
-  spec:
-   nodeSelector:
-    rol: broker
-   containers:
-   - name: brokerfilemanager-deployment
-     image: docker.io/bitboss629/brokerfilemanager:v1 
-````
+  replicas: 1  # Número de pods del Broker
+  selector:
+    matchLabels:
+      app: brokerfilemanager  # Identifica los pods a gestionar
+  template:
+    metadata:
+      labels:
+        app: brokerfilemanager
+    spec:
+      nodeSelector:
+        rol: broker  # Despliega SOLO en nodos con etiqueta rol=broker
+      containers:
+      - name: brokerfilemanager-deployment
+        image: docker.io/bitboss629/brokerfilemanager:v1
+        ports:
+        - containerPort: 32002
+```
+
+#### 📝 Explicación de Campos
+
+| Campo | Valor | Descripción |
+|-------|-------|-------------|
+| `apiVersion` | `apps/v1` | Versión de la API de Kubernetes |
+| `kind` | `Deployment` | Tipo de recurso a crear |
+| `replicas` | `1` | Cantidad de instancias (pods) a ejecutar |
+| `nodeSelector` | `rol: broker` | Etiqueta que determina en qué nodo se despliega |
+| `image` | `bitboss629/brokerfilemanager:v1` | Imagen Docker desde [Docker Hub](https://hub.docker.com/) |
+
+---
 
 ### serverDeployment:
 ````
