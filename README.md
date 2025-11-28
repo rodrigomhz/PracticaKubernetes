@@ -218,8 +218,6 @@ spec:
       containers:
       - name: brokerfilemanager-deployment
         image: docker.io/bitboss629/brokerfilemanager:v1
-        ports:
-        - containerPort: 32002
 ```
 
 #### 📝 Explicación de Campos
