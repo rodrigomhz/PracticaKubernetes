@@ -329,7 +329,7 @@ Resumen Conceptos:
   
   5. nodePort: Es el puerto en los nodos del clúster que se expone a fuera del clúster. Es como si pusieras una puerta de entrada en la muralla del barrio para que la gente desde fuera pueda entrar.
 
-# Ejecucuión
+# Ejecuión
 ---
 Antes de desplegar nuestros servicios en Kubernetes, es necesario construir las imágenes Docker de ambos componentes: brokerFileManager y serverFileManager.
 Estas imágenes son las que luego utilizarán los Deployments.
